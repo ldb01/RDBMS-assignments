@@ -1,0 +1,317 @@
+
+
+-- 1. Positive Number
+DECLARE
+  n NUMBER := &num;
+BEGIN
+  IF n > 0 THEN
+    DBMS_OUTPUT.PUT_LINE('Hello');
+  END IF;
+END;
+/
+
+-- 2. Salary Grade
+DECLARE
+  sal NUMBER := &salary;
+BEGIN
+  IF sal >= 50000 THEN
+    DBMS_OUTPUT.PUT_LINE('Grade A');
+  ELSIF sal >= 30000 THEN
+    DBMS_OUTPUT.PUT_LINE('Grade B');
+  ELSE
+    DBMS_OUTPUT.PUT_LINE('Grade C');
+  END IF;
+END;
+/
+
+-- 3. Increase Salary by 500 if >3000
+DECLARE
+  sal NUMBER := &salary;
+BEGIN
+  IF sal > 3000 THEN
+    sal := sal + 500;
+  END IF;
+  DBMS_OUTPUT.PUT_LINE('Updated Salary: ' || sal);
+END;
+/
+
+-- 4. Insert 10 Rows using FOR LOOP
+BEGIN
+  FOR i IN 1..10 LOOP
+    INSERT INTO demo_table VALUES (i, 'Name'||i);
+  END LOOP;
+END;
+/
+
+-- 5. Fibonacci Series
+DECLARE
+  a NUMBER := 0;
+  b NUMBER := 1;
+  c NUMBER;
+BEGIN
+  DBMS_OUTPUT.PUT_LINE(a);
+  DBMS_OUTPUT.PUT_LINE(b);
+  FOR i IN 1..8 LOOP
+    c := a + b;
+    DBMS_OUTPUT.PUT_LINE(c);
+    a := b;
+    b := c;
+  END LOOP;
+END;
+/
+
+-- 6. Using %TYPE
+DECLARE
+  v_name employee.name%TYPE;
+  v_sal  employee.salary%TYPE;
+BEGIN
+  SELECT name, salary INTO v_name, v_sal
+  FROM employee
+  WHERE emp_no = &emp_no;
+
+  DBMS_OUTPUT.PUT_LINE(v_name || ' ' || v_sal);
+END;
+/
+
+-- 7. Reverse Number
+DECLARE
+  n NUMBER := &num;
+  rev NUMBER := 0;
+BEGIN
+  WHILE n > 0 LOOP
+    rev := rev * 10 + MOD(n,10);
+    n := FLOOR(n/10);
+  END LOOP;
+  DBMS_OUTPUT.PUT_LINE('Reverse: ' || rev);
+END;
+/
+
+-- 8. Department using CASE
+DECLARE
+  did NUMBER := &dept_id;
+  dname VARCHAR2(20);
+BEGIN
+  dname :=
+    CASE did
+      WHEN 10 THEN 'Finance'
+      WHEN 20 THEN 'HR'
+      WHEN 30 THEN 'IT'
+      WHEN 40 THEN 'Sales'
+      ELSE 'Invalid Department'
+    END;
+
+  DBMS_OUTPUT.PUT_LINE(dname);
+END;
+/
+
+-- 9. Get Name and Salary
+DECLARE
+  n employee.name%TYPE;
+  s employee.salary%TYPE;
+BEGIN
+  SELECT name, salary INTO n, s
+  FROM employee
+  WHERE emp_no = &emp_no;
+
+  DBMS_OUTPUT.PUT_LINE(n || ' ' || s);
+END;
+/
+
+-- 10. Sum of First 100 Odd Numbers
+DECLARE
+  total NUMBER := 0;
+BEGIN
+  FOR i IN 1..100 LOOP
+    total := total + (2*i - 1);
+  END LOOP;
+
+  DBMS_OUTPUT.PUT_LINE('Sum = ' || total);
+END;
+/
+
+-----------------------------------------
+-- ASSIGNMENT III
+-----------------------------------------
+
+-- 11. Insert Employee Procedure
+CREATE OR REPLACE PROCEDURE add_emp(p_no NUMBER, p_name VARCHAR2) AS
+BEGIN
+  INSERT INTO employee(emp_no, name) VALUES (p_no, p_name);
+END;
+/
+
+-- 12. Display Employee Details
+CREATE OR REPLACE PROCEDURE emp_details(p_no NUMBER) AS
+BEGIN
+  FOR r IN (SELECT name, designation, salary FROM employee WHERE emp_no = p_no) LOOP
+    DBMS_OUTPUT.PUT_LINE(r.name || ' ' || r.designation || ' ' || r.salary);
+  END LOOP;
+END;
+/
+
+-- 13. OUT Parameter Procedure
+CREATE OR REPLACE PROCEDURE emp_info(
+  p_no IN NUMBER,
+  p_name OUT VARCHAR2,
+  p_dept OUT VARCHAR2
+) AS
+BEGIN
+  SELECT e.name, d.dept_name
+  INTO p_name, p_dept
+  FROM employee e JOIN department d
+  ON e.dept_id = d.dept_id
+  WHERE e.emp_no = p_no;
+END;
+/
+
+-- 14. Display Grade in Department
+CREATE OR REPLACE PROCEDURE emp_grade(p_dept NUMBER) AS
+BEGIN
+  FOR r IN (
+    SELECT name,
+    CASE
+      WHEN salary >= 50000 THEN 'A'
+      WHEN salary >= 30000 THEN 'B'
+      ELSE 'C'
+    END grade
+    FROM employee
+    WHERE dept_id = p_dept
+  ) LOOP
+    DBMS_OUTPUT.PUT_LINE(r.name || ' Grade ' || r.grade);
+  END LOOP;
+END;
+/
+
+-- 15. Total Salary Function
+CREATE OR REPLACE FUNCTION total_salary_dept(p_dept NUMBER)
+RETURN NUMBER AS
+  total NUMBER;
+BEGIN
+  SELECT SUM(salary) INTO total
+  FROM employee
+  WHERE dept_id = p_dept;
+  RETURN total;
+END;
+/
+
+-- 16. Count Employee Function
+CREATE OR REPLACE FUNCTION count_emp_dept(p_dept NUMBER)
+RETURN NUMBER AS
+  cnt NUMBER;
+BEGIN
+  SELECT COUNT(*) INTO cnt
+  FROM employee
+  WHERE dept_id = p_dept;
+  RETURN cnt;
+END;
+/
+
+-- 17. Bonus Function
+CREATE OR REPLACE FUNCTION calc_bonus(p_sal NUMBER)
+RETURN NUMBER AS
+BEGIN
+  RETURN p_sal * 0.20;
+END;
+/
+
+-- 18. Show Employee
+CREATE OR REPLACE PROCEDURE show_emp(p_id NUMBER) AS
+BEGIN
+  FOR r IN (
+    SELECT e.name, e.salary, d.dept_name
+    FROM employee e JOIN department d
+    ON e.dept_id = d.dept_id
+    WHERE e.emp_no = p_id
+  ) LOOP
+    DBMS_OUTPUT.PUT_LINE(r.name || ' ' || r.salary || ' ' || r.dept_name);
+  END LOOP;
+END;
+/
+
+-- 19. Update Salary Procedure
+CREATE OR REPLACE PROCEDURE update_salary(p_id NUMBER, p_per NUMBER) AS
+BEGIN
+  UPDATE employee
+  SET salary = salary + (salary * p_per / 100)
+  WHERE emp_no = p_id;
+END;
+/
+
+-- 20. Calculate Age Function
+CREATE OR REPLACE FUNCTION calculate_age(p_id NUMBER)
+RETURN NUMBER AS
+  dob DATE;
+BEGIN
+  SELECT date_of_birth INTO dob
+  FROM employee
+  WHERE emp_no = p_id;
+
+  RETURN FLOOR(MONTHS_BETWEEN(SYSDATE, dob) / 12);
+END;
+/
+
+-----------------------------------------
+-- ASSIGNMENT IV
+-----------------------------------------
+
+-- 21. Cursor Display
+DECLARE
+  CURSOR c1 IS SELECT * FROM employee;
+BEGIN
+  FOR r IN c1 LOOP
+    DBMS_OUTPUT.PUT_LINE(r.name || ' ' || r.salary);
+  END LOOP;
+END;
+/
+
+-- 22. Managers or Analysts
+DECLARE
+  CURSOR c IS
+    SELECT name FROM employee
+    WHERE designation IN ('Manager','Analyst');
+BEGIN
+  FOR r IN c LOOP
+    DBMS_OUTPUT.PUT_LINE(r.name);
+  END LOOP;
+END;
+/
+
+-- 23. Increase SALES by 10%
+DECLARE
+  CURSOR c IS
+    SELECT emp_no, salary FROM employee WHERE dept_id = 40;
+BEGIN
+  FOR r IN c LOOP
+    DBMS_OUTPUT.PUT_LINE('Old: ' || r.salary);
+    UPDATE employee
+    SET salary = salary * 1.10
+    WHERE emp_no = r.emp_no;
+    DBMS_OUTPUT.PUT_LINE('New: ' || r.salary * 1.10);
+  END LOOP;
+END;
+/
+
+-- 24. Implicit Cursor
+BEGIN
+  UPDATE employee SET salary = salary + 1000;
+
+  IF SQL%ROWCOUNT = 0 THEN
+    DBMS_OUTPUT.PUT_LINE('None of the salaries were updated');
+  ELSE
+    DBMS_OUTPUT.PUT_LINE('Salaries for ' || SQL%ROWCOUNT || ' employees updated');
+  END IF;
+END;
+/
+
+-- 25. Top 5 Highest Paid
+DECLARE
+  CURSOR c IS
+    SELECT * FROM employee
+    ORDER BY salary DESC
+    FETCH FIRST 5 ROWS ONLY;
+BEGIN
+  FOR r IN c LOOP
+    DBMS_OUTPUT.PUT_LINE(r.name || ' ' || r.salary);
+  END LOOP;
+END;
+/
