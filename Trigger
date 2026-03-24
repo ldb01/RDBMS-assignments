@@ -1,0 +1,97 @@
+-- =========================================
+-- Assignment V: Trigger & Exception Handling
+-- =========================================
+
+-- =========================================
+-- Q1: Salary Audit System
+-- =========================================
+CREATE OR REPLACE TRIGGER trg_salary_audit
+BEFORE UPDATE OF salary ON EMPLOYEE
+FOR EACH ROW
+BEGIN
+    INSERT INTO SALARY_LOG(emp_id, old_salary, new_salary, change_date)
+    VALUES(:OLD.emp_id, :OLD.salary, :NEW.salary, SYSDATE);
+END;
+/
+
+-- =========================================
+-- Q2: Prevent Salary Decrease
+-- =========================================
+CREATE OR REPLACE TRIGGER trg_prevent_salary_decrease
+BEFORE UPDATE OF salary ON EMPLOYEE
+FOR EACH ROW
+BEGIN
+    IF :NEW.salary < :OLD.salary THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Salary cannot be decreased!');
+    END IF;
+END;
+/
+
+-- =========================================
+-- Q3: Automatic Department Employee Count
+-- =========================================
+
+-- Increase count after insert
+CREATE OR REPLACE TRIGGER trg_increase_emp_count
+AFTER INSERT ON EMPLOYEE
+FOR EACH ROW
+BEGIN
+    UPDATE DEPARTMENT
+    SET total_emp = total_emp + 1
+    WHERE dept_id = :NEW.dept_id;
+END;
+/
+
+-- Decrease count after delete
+CREATE OR REPLACE TRIGGER trg_decrease_emp_count
+AFTER DELETE ON EMPLOYEE
+FOR EACH ROW
+BEGIN
+    UPDATE DEPARTMENT
+    SET total_emp = total_emp - 1
+    WHERE dept_id = :OLD.dept_id;
+END;
+/
+
+-- =========================================
+-- Q4: Log Deleted Records
+-- =========================================
+CREATE OR REPLACE TRIGGER trg_backup_employee
+BEFORE DELETE ON EMPLOYEE
+FOR EACH ROW
+BEGIN
+    INSERT INTO EMPLOYEE_BACKUP(emp_id, name, salary, dept_id)
+    VALUES(:OLD.emp_id, :OLD.name, :OLD.salary, :OLD.dept_id);
+END;
+/
+
+-- =========================================
+-- Q5: Unique Email Validation
+-- =========================================
+CREATE OR REPLACE TRIGGER trg_unique_email
+BEFORE INSERT ON STUDENT
+FOR EACH ROW
+DECLARE
+    v_count NUMBER;
+BEGIN
+    SELECT COUNT(*)
+    INTO v_count
+    FROM STUDENT
+    WHERE email = :NEW.email;
+
+    IF v_count > 0 THEN
+        RAISE_APPLICATION_ERROR(-20002, 'Email already exists!');
+    END IF;
+END;
+/
+
+-- =========================================
+-- Q6: Automatic Timestamp Update
+-- =========================================
+CREATE OR REPLACE TRIGGER trg_update_timestamp
+BEFORE UPDATE OF price ON PRODUCT
+FOR EACH ROW
+BEGIN
+    :NEW.last_updated := SYSDATE;
+END;
+/
